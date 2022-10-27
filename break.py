@@ -11,7 +11,7 @@ with open('pswd.txt') as file:
     passwords = [line.rstrip() for line in file]
 
 while True:
-    request = requests.get('url', auth=HTTPDigestAuth('admin', passwords[passwordcounter]))
+    request = requests.head('url', auth=HTTPDigestAuth('admin', passwords[passwordcounter]))
     if request.status_code == 200:
         print(f'1, Success! Password is \"{passwords[passwordcounter]}\"')
         break
