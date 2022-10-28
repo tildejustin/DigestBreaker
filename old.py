@@ -9,7 +9,7 @@ url3 = 'http://138.207.175.210/configure'
 url4 = 'http://172.16.1.1/configure/index.cgi'
 
 # fresh off the stack overflow griddle
-with open('arst.txt') as file:
+with open('dates.txt') as file:
     # tf is list comprehension?
     passwords = [line.rstrip() for line in file]
 

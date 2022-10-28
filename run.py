@@ -24,7 +24,7 @@ nonce = r.headers['WWW-Authenticate'][180:-13]
 # print(nonce)
 
 # fresh off the stack overflow griddle
-with open('arst.txt') as file:
+with open('dates.txt') as file:
     # tf is list comprehension?
     passwords = [line.rstrip() for line in file]
 
@@ -63,3 +63,4 @@ for i in range(total, len(passwords)):
 
 # r = requests.get('https://authenticationtest.com/HTTPAuth/', auth=('user', 'pass'))
 # print(r.status_code)
+print('Donc ç\'est la fin.')
