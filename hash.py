@@ -3,10 +3,6 @@ import random
 
 
 def hash1(user, realm, password):
-    """
-
-    :rtype: object
-    """
     return hashlib.md5(f'{user}:{realm}:{password}'.encode()).hexdigest()
 
 

