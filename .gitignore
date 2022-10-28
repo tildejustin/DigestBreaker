@@ -1,5 +1,2 @@
-rockyou.txt
-1mil_list1.txt
-1mil_list2.txt
-dates.txt
-number1mil.csv
+*.txt
+*.csv
