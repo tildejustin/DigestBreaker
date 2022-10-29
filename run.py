@@ -54,7 +54,7 @@ def main():
 
     if total > len(passwords):
         print('Total is greater then amount of passwords, please change')
-    exit()
+        exit()
 
     for i in range(total, len(passwords)):
         cnonce = secrets.token_hex(8)
@@ -66,7 +66,7 @@ def main():
 
         # triggers on status codes other than 200 but i'd want to know about those, too
         if request.status_code != 401:
-            log(request)
+            log(request, passwords[i], i)
 
         nonce = request.headers['WWW-Authenticate'][180:-13]
 
