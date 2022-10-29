@@ -50,17 +50,24 @@ def main() -> None:
     method = 'HEAD'
     qop = 'auth'
     filename = 'rockyou_utf8.txt'
+    encoding = ''
 
-    with open(filename) as file:
-        passwords = [line.rstrip() for line in file]
+    get_encoding = lambda encoding : 'utf8' if encoding == '' else encoding
+
+    with open(filename, encoding=get_encoding(encoding)) as file:
+        # passwords = [line.rstrip() for line in file]
+        passwords = file.readlines()
+    passwords = [password.rstrip() for password in passwords]
+
     print(len(passwords), 'passwords loaded')
 
     if total > len(passwords):
         print('Total is greater then amount of passwords, please change')
         exit()
+    print('starting at', total)
 
     # get a new nonce to start the chain
-    # get realm from header, has problems with '@' for some reason, have to look into that
+    # gets realm from header, has problems with '@' for some reason, have to look into that
     request = requests.head(url)
     realm_dict = dict(reg.findall(request.headers['www-authenticate']))
     realm = realm_dict['realm']
