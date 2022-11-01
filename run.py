@@ -25,6 +25,9 @@ def read_passwords(filename: str, total_tried) -> list[str]:
     with open(filename, 'r') as file:
         passwords = file.readlines()
     passwords = [password.rstrip() for password in passwords]
+    if total_tried > len(passwords):
+        print("Total is larger than number of passwords provided, please change.")
+        exit()
     passwords = passwords[total_tried:]
     return passwords
 
