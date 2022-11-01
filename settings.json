@@ -1,0 +1,7 @@
+{
+  "base_url" : "http://httpbin.org",
+  "uri" : "/digest-auth/auth/admin/admin",
+  "password_file" : "10k.txt",
+  "username" : "admin",
+  "total_tried" : 0
+}
