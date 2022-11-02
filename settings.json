@@ -1,7 +1,7 @@
 {
-  "base_url" : "http://httpbin.org",
-  "uri" : "/digest-auth/auth/admin/admin",
-  "password_file" : "10k.txt",
+  "base_url" : "http://172.16.1.1",
+  "uri" : "/configure",
+  "password_file" : "rockyou_utf8.txt",
   "username" : "admin",
-  "total_tried" : 0
+  "total_tried" : 312300
 }

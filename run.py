@@ -22,13 +22,14 @@ def read_settings() -> dict[str, typing.Any]:
 
 def read_passwords(filename: str, total_tried) -> list[str]:
     """reads a file of name 'filename' and returns a list containing every line, filtered for newlines"""
-    with open(filename, 'r') as file:
+    with open(filename, 'r', encoding='utf8') as file:
         passwords = file.readlines()
     passwords = [password.rstrip() for password in passwords]
     if total_tried > len(passwords):
         print("Total is larger than number of passwords provided, please change.")
         exit()
     passwords = passwords[total_tried:]
+    print(len(passwords), 'passwords loaded')
     return passwords
 
 
@@ -114,9 +115,10 @@ def refresh_nonce_and_opaque(base_url, uri) -> typing.Tuple[typing.Optional[str]
 
 def print_progress(counter, password, status_code):
     """editable print function to get an idea on how to program is working"""
-    # if counter % 100 == 0:
-    #     print(counter, end=', ')
-    print(counter, password, status_code)
+    if counter % 100 == 0:
+        print(counter, end=', ')
+    # print(counter, password, status_code)
+    # print(request.request.headers)
 
 
 def main() -> None:

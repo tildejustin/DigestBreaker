@@ -1,0 +1,13 @@
+raw data = ~312300 attempts in 1.121 hours (1h 6m 12.3 sec) =
+
+~278590 attempts per hour =
+~4643 per minute =
+~77 per second
+
+~51.49 hours to get run through rockyou.txt (14344391 attempts)
+
+Friday, 16:30 - Monday, 8:00 = 63:30 of undisturbed runtime
+
+QED
+
+next steps: set up a raspberry pi with the code and find a power source
