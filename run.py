@@ -1,10 +1,12 @@
 import hashlib
 import json
-from secrets import token_hex
-import sys
 import re
+import secrets
+import sys
 import typing
 import requests
+
+# "What's an object anyways"
 
 def main() -> None:
     """main loop, reads settings, inits values, and runs the loop for all passwords in the password file,
@@ -42,7 +44,7 @@ def md5(*args: typing.Any) -> str:
 
 
 def read_settings() -> dict[str, typing.Any]:
-    """reads 'settings.json' and returns a dictionary of each item in it"""
+    """reads "settings.json" and returns a dictionary of each item in it"""
     with open("settings.json", "r", encoding="utf8") as file:
         settings = json.load(file)
     return settings
@@ -66,22 +68,20 @@ def get_nonce(string: str) -> typing.Optional[str]:
     nonce_regex_obj = re.search(r'nonce="([^"]+)"', string)
     if nonce_regex_obj:
         return nonce_regex_obj.group(1)
-    else:
-        return None
+    return None
 
 
 def get_opaque(string: str) -> typing.Optional[str]:
-    """checks a 'www-authenticate' header for a opaque and returns it if it is found, otherwise it returns 'None'"""
+    """checks a "www-authenticate" header for a opaque and returns it if it is found, otherwise it returns None"""
     opaque_regex_obj = re.search(r'opaque="([^"]+)"', string)
     if opaque_regex_obj:
         return opaque_regex_obj.group(1)
-    else:
-        return None
+    return None
 
 
-def get_init_header(base_url: str, uri: str):
+def get_init_header(base_url: str, uri: str) -> typing.Tuple(typing.Optional(str), str, str, str):
     """makes a request to an auth endpoint and returns the realm, and qop and/or opaque if applicable, and also gets the first nonce to start off the chain"""
-    request = requests.head(base_url + uri, timeout=60)
+    request = requests.head(base_url + uri)
     realm_match_object = re.search(
         r'realm="([^"]+)"', request.headers["www-authenticate"]
     )
@@ -100,7 +100,7 @@ def get_init_header(base_url: str, uri: str):
 
 
 def hash_response(username, realm, password, uri, nonce, client_nonce, qop) -> str:
-    """Calculates the response hash and takes into account if 'auth' qop is being used"""
+    """Calculates the response hash and takes into account if "auth" or no qop is being used"""
     hash_1 = md5(username, realm, password)
     hash_2 = md5("HEAD", uri)
     if qop:
@@ -113,9 +113,8 @@ def hash_response(username, realm, password, uri, nonce, client_nonce, qop) -> s
 def make_request(
     username, realm, password, base_url, uri, nonce, qop, opaque
 ) -> requests.Response:
-    """Takes in many parameters and puts together a proper request with all fields calculated, returning a Response
-    object"""
-    client_nonce = token_hex(4)
+    """Takes in a few parameters and puts together a proper request with all fields calculated, returning a Response object"""
+    client_nonce = secrets.token_hex(4)
     response = hash_response(username, realm, password, uri, nonce, client_nonce, qop)
     header = {
         "Authorization": f'Digest username="{username}", realm="{realm}", nonce="{nonce}", uri="{uri}", algorithm=MD5, response="{response}"'
@@ -124,7 +123,7 @@ def make_request(
         header["Authorization"] += f', qop={qop}, nc=00000001, cnonce="{client_nonce}"'
     if opaque:
         header["Authorization"] += f', opaque="{opaque}"'
-    request = requests.head(base_url + uri, headers=header, timeout=60)
+    request = requests.head(base_url + uri, headers=header)
     return request
 
 
@@ -144,14 +143,15 @@ def log_request(status_code: int, password: str, counter: int) -> None:
 
 
 def refresh_nonce_and_opaque(base_url, uri) -> requests.Response:
-    request = requests.head(base_url + uri, timeout=60)
+    """Refreshes the nonce and opaque for when a non-401 request is recieved"""
+    request = requests.head(base_url + uri)
     return request
 
 
 def print_progress(counter, password, status_code):
     """editable print function to get an idea on how to program is working"""
     if counter % 100 == 0:
-        print(counter, end=", ")
+        print(counter)  # , end=", "
     # print(counter, password, status_code)
     # print(request.request.headers)
 

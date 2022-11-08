@@ -1,7 +1,7 @@
 {
   "base_url" : "http://172.16.1.1",
   "uri" : "/configure",
-  "password_file" : "rockyou_utf8.txt",
+  "password_file" : "10k.txt",
   "username" : "admin",
-  "total_tried" : 341100
+  "total_tried" : 0
 }
